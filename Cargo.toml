@@ -1,0 +1,13 @@
+[package]
+name = "simplegraph"
+version = "0.1.0"
+edition = "2021"
+
+authors = ["Filippo Ranza <filipporanza@gmail.com>"]
+license = "MIT"
+description = "A simple graph implementation"
+repository = "https://github.com/FilippoRanza/simplegraph"
+keywords = ["graph", "graph-theory", "simple-graph", "direct-graph", "undirect-graph"]
+readme = "README.md"
+
+[dependencies]
