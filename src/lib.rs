@@ -1,4 +1,3 @@
-use num_traits;
 
 macro_rules! enum_mut {
     ($list:expr) => {
