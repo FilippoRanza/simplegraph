@@ -11,3 +11,5 @@ keywords = ["graph", "graph-theory", "simple-graph", "direct-graph", "undirect-g
 readme = "README.md"
 
 [dependencies]
+ndarray = "0.15.4"
+num-traits = "0.2.14"
