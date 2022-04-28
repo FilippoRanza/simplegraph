@@ -5,11 +5,18 @@ macro_rules! enum_mut {
 }
 
 pub mod adjacency_list_graph;
+pub mod dot;
 pub mod matrix_graph;
+pub mod visitor;
 
+#[derive(Clone, Copy)]
 pub enum GraphType {
     Direct,
     Undirect,
+}
+
+pub trait GetGraphType {
+    fn graph_type(&self) -> GraphType;
 }
 
 #[cfg(test)]

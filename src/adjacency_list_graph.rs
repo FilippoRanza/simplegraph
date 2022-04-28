@@ -1,4 +1,5 @@
 use super::empty_list_of_lists;
+use super::visitor;
 use super::GraphType;
 
 pub struct AdjList<N> {
@@ -92,6 +93,25 @@ where
     }
 }
 
+impl<N> super::GetGraphType for &AdjList<N> {
+    fn graph_type(&self) -> GraphType {
+        self.gtype
+    }
+}
+
+impl<N> visitor::GraphVisitor<N> for &AdjList<N>
+where
+    N: num_traits::Num + Default + Clone + Copy,
+{
+    fn node_visitor<F: FnMut(usize, N)>(&self, mut f: F) {
+        self.node_iterator().for_each(|(i, n)| f(i, n))
+    }
+
+    fn arc_visitor<G: FnMut(usize, usize, N)>(&self, mut g: G) {
+        self.arc_iterator().for_each(|(i, j, n)| g(i, j, n))
+    }
+}
+
 pub struct AdjArc<N> {
     weight: N,
     next: usize,
@@ -120,6 +140,7 @@ where
 mod test {
 
     use super::*;
+    use crate::visitor::GraphVisitor;
 
     #[test]
     fn test_direct_graph() {
@@ -166,8 +187,8 @@ mod test {
                 (1, 2) => assert_eq!(4.0, w),
                 (2, 3) => assert_eq!(6.0, w),
                 (3, 0) => assert_eq!(8.0, w),
-                (a, b) => panic!("Not existing arc ({a} {b})")
-            } 
+                (a, b) => panic!("Not existing arc ({a} {b})"),
+            }
         }
 
         for n in 0..4 {
@@ -180,25 +201,54 @@ mod test {
                     (1, 2) => assert_eq!(4.0, w),
                     (2, 3) => assert_eq!(6.0, w),
                     (3, 0) => assert_eq!(8.0, w),
-                    (a, b) => panic!("Not existing arc ({a} {b})")
+                    (a, b) => panic!("Not existing arc ({a} {b})"),
                 }
             }
             assert_eq!(count, 1);
         }
-
-
     }
 
     #[test]
     fn test_undirect_graph() {
+        let graph = make_graph();
+        for list in &graph.lists {
+            assert_eq!(list.len(), 2);
+        }
+    }
+
+    #[test]
+    fn test_node_visitor() {
+        let mut graph = make_graph();
+        graph.update_all_nodes_weight(|i, _| (i as f64));
+        let mut visit_list: Vec<(usize, f64)> = vec![];
+        (&graph).node_visitor(|i, n| visit_list.push((i, n)));
+        assert_eq!(vec![(0, 0.0), (1, 1.0), (2, 2.0), (3, 3.0)], visit_list);
+    }
+
+    #[test]
+    fn test_arc_visitor() {
+        let graph = make_graph();
+        let mut visit_list: Vec<(usize, usize, f64)> = vec![];
+        (&graph).arc_visitor(|i, j, n| visit_list.push((i, j, n)));
+        let expect = vec![
+            (0, 1, 1.0),
+            (0, 3, 4.0),
+            (1, 0, 1.0),
+            (1, 2, 2.0),
+            (2, 1, 2.0),
+            (2, 3, 3.0),
+            (3, 2, 3.0),
+            (3, 0, 4.0),
+        ];
+        assert_eq!(expect, visit_list);
+    }
+
+    fn make_graph() -> AdjList<f64> {
         let mut graph = AdjList::new_undirect(4);
         graph.add_new_arc(0, 1, 1.0);
         graph.add_new_arc(1, 2, 2.0);
         graph.add_new_arc(2, 3, 3.0);
         graph.add_new_arc(3, 0, 4.0);
-
-        for list in &graph.lists {
-            assert_eq!(list.len(), 2);
-        }
+        graph
     }
 }
