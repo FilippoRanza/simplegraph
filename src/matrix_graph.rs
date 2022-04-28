@@ -125,8 +125,8 @@ where
 #[cfg(test)]
 mod test {
 
-    use crate::visitor::GraphVisitor;
     use super::*;
+    use crate::visitor::GraphVisitor;
 
     #[test]
     fn test_direct_graph() {
@@ -187,7 +187,6 @@ mod test {
         assert_eq!(graph.weight_mat[(3, 2)], 6.0);
         assert_eq!(graph.weight_mat[(0, 3)], 8.0);
     }
-
 
     #[test]
     fn test_node_visitor() {
