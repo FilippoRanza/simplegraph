@@ -71,22 +71,21 @@ where
         self.lists[src].push(arc);
     }
 
-    pub fn node_iterator<'a>(&'a self) -> impl Iterator<Item = (usize, N)> + 'a {
+    pub fn node_iterator(&'_ self) -> impl Iterator<Item = (usize, N)> + '_ {
         self.nodes.iter().copied().enumerate()
     }
 
-    pub fn arc_iterator<'a>(&'a self) -> impl Iterator<Item = (usize, usize, N)> + 'a {
+    pub fn arc_iterator(&'_ self) -> impl Iterator<Item = (usize, usize, N)> + '_ {
         self.lists
             .iter()
             .enumerate()
-            .map(|(i, list)| list.iter().map(move |a| (i, a.next, a.weight)))
-            .flatten()
+            .flat_map(|(i, list)| list.iter().map(move |a| (i, a.next, a.weight)))
     }
 
-    pub fn successor_iterator<'a>(
-        &'a self,
+    pub fn successor_iterator(
+        &'_ self,
         node: usize,
-    ) -> impl Iterator<Item = (usize, usize, N)> + 'a {
+    ) -> impl Iterator<Item = (usize, usize, N)> + '_ {
         self.lists[node]
             .iter()
             .map(move |a| (node, a.next, a.weight))

@@ -78,21 +78,21 @@ where
         self.weight_mat[(src, dst)] = weight;
     }
 
-    pub fn node_iterator<'a>(&'a self) -> impl Iterator<Item = (usize, N)> + 'a {
+    pub fn node_iterator(&'_ self) -> impl Iterator<Item = (usize, N)> + '_ {
         self.nodes.iter().copied().enumerate()
     }
 
-    pub fn arc_iterator<'a>(&'a self) -> impl Iterator<Item = (usize, usize, N)> + 'a {
+    pub fn arc_iterator(&'_ self) -> impl Iterator<Item = (usize, usize, N)> + '_ {
         self.adj_mat
             .indexed_iter()
             .zip(self.weight_mat.iter())
             .filter_map(|(((i, j), a), w)| if *a { Some((i, j, *w)) } else { None })
     }
 
-    pub fn successor_iterator<'a>(
-        &'a self,
+    pub fn successor_iterator(
+        &'_ self,
         node: usize,
-    ) -> impl Iterator<Item = (usize, usize, N)> + 'a {
+    ) -> impl Iterator<Item = (usize, usize, N)> + '_ {
         let nc = self.nodes.len();
         (0..nc).filter_map(move |j| {
             if self.adj_mat[(node, j)] {
