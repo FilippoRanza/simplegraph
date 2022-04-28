@@ -3,6 +3,7 @@ use super::visitor;
 use super::GraphType;
 
 pub struct AdjList<N> {
+    arc_count: usize,
     gtype: GraphType,
     nodes: Vec<N>,
     lists: Vec<Vec<AdjArc<N>>>,
@@ -24,6 +25,7 @@ where
         let nodes = vec![Default::default(); node_count];
         let lists = empty_list_of_lists(node_count);
         Self {
+            arc_count: 0,
             gtype,
             nodes,
             lists,
@@ -69,6 +71,7 @@ where
     fn make_arc(&mut self, src: usize, dst: usize, weight: N) {
         let arc = AdjArc::new(weight, dst);
         self.lists[src].push(arc);
+        self.arc_count += 1;
     }
 
     pub fn node_iterator(&'_ self) -> impl Iterator<Item = (usize, N)> + '_ {
@@ -108,6 +111,14 @@ where
 
     fn arc_visitor<G: FnMut(usize, usize, N)>(&self, mut g: G) {
         self.arc_iterator().for_each(|(i, j, n)| g(i, j, n))
+    }
+
+    fn node_count(&self) -> usize {
+        self.nodes.len()
+    }
+
+    fn arc_count(&self) -> usize {
+        self.arc_count
     }
 }
 

@@ -4,6 +4,7 @@ use ndarray::{Array2, Zip};
 use num_traits;
 
 pub struct MatrixGraph<N> {
+    arc_count: usize,
     gtype: GraphType,
     nodes: Vec<N>,
     adj_mat: Array2<bool>,
@@ -20,6 +21,7 @@ where
         let adj_mat = Array2::default(mat_size);
         let weight_mat = Array2::zeros(mat_size);
         Self {
+            arc_count: 0,
             nodes,
             gtype,
             adj_mat,
@@ -74,8 +76,15 @@ where
     }
 
     fn make_arc(&mut self, src: usize, dst: usize, weight: N) {
-        self.adj_mat[(src, dst)] = true;
-        self.weight_mat[(src, dst)] = weight;
+        if let Some(adj) = self.adj_mat.get_mut((src, dst)) {
+            if !*adj {
+                *adj = true;
+                self.weight_mat[(src, dst)] = weight;
+                self.arc_count += 1;
+            }
+        } else {
+            panic! {"No entry at ({src}, {dst})"}
+        }
     }
 
     pub fn node_iterator(&'_ self) -> impl Iterator<Item = (usize, N)> + '_ {
@@ -119,6 +128,14 @@ where
     }
     fn arc_visitor<G: FnMut(usize, usize, N)>(&self, mut g: G) {
         self.arc_iterator().for_each(|(i, j, n)| g(i, j, n))
+    }
+
+    fn node_count(&self) -> usize {
+        self.nodes.len()
+    }
+
+    fn arc_count(&self) -> usize {
+        self.arc_count
     }
 }
 

@@ -56,7 +56,8 @@ where
 {
     let arrow = get_arrow(g);
     let f = get_arc_insert_logic(g);
-    let mut str_builder = BuildBody::new(0, arrow, f);
+    let count = g.total_entries();
+    let mut str_builder = BuildBody::new(count, arrow, f);
     g.node_visitor(|i, n| str_builder.add_node(i, n));
     g.arc_visitor(|i, j, n| str_builder.add_arc(i, j, n));
     str_builder.build_str()
