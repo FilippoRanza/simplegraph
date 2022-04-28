@@ -69,6 +69,27 @@ where
         let arc = AdjArc::new(weight, dst);
         self.lists[src].push(arc);
     }
+
+    pub fn node_iterator<'a>(&'a self) -> impl Iterator<Item = (usize, N)> + 'a {
+        self.nodes.iter().copied().enumerate()
+    }
+
+    pub fn arc_iterator<'a>(&'a self) -> impl Iterator<Item = (usize, usize, N)> + 'a {
+        self.lists
+            .iter()
+            .enumerate()
+            .map(|(i, list)| list.iter().map(move |a| (i, a.next, a.weight)))
+            .flatten()
+    }
+
+    pub fn successor_iterator<'a>(
+        &'a self,
+        node: usize,
+    ) -> impl Iterator<Item = (usize, usize, N)> + 'a {
+        self.lists[node]
+            .iter()
+            .map(move |a| (node, a.next, a.weight))
+    }
 }
 
 pub struct AdjArc<N> {
@@ -124,8 +145,8 @@ mod test {
 
         graph.update_all_nodes_weight(|i, _| 1.5 * (i as f64));
 
-        for (i, n) in graph.nodes.iter().enumerate() {
-            assert_eq!(*n, 1.5 * (i as f64));
+        for (i, n) in graph.node_iterator() {
+            assert_eq!(n, 1.5 * (i as f64));
         }
     }
 
@@ -139,11 +160,33 @@ mod test {
 
         graph.update_all_arcs_weight(|_, _, w| 2.0 * w);
 
-        for (list, expect) in graph.lists.iter().zip([1.0, 2.0, 3.0, 4.0]) {
-            assert_eq!(list.len(), 1);
-            let arc = &list[0];
-            assert_eq!(arc.weight, 2.0 * expect);
+        for (i, j, w) in graph.arc_iterator() {
+            match (i, j) {
+                (0, 1) => assert_eq!(2.0, w),
+                (1, 2) => assert_eq!(4.0, w),
+                (2, 3) => assert_eq!(6.0, w),
+                (3, 0) => assert_eq!(8.0, w),
+                (a, b) => panic!("Not existing arc ({a} {b})")
+            } 
         }
+
+        for n in 0..4 {
+            let mut count = 0;
+            for (i, j, w) in graph.successor_iterator(n) {
+                count += 1;
+                assert_eq!(i, n);
+                match (n, j) {
+                    (0, 1) => assert_eq!(2.0, w),
+                    (1, 2) => assert_eq!(4.0, w),
+                    (2, 3) => assert_eq!(6.0, w),
+                    (3, 0) => assert_eq!(8.0, w),
+                    (a, b) => panic!("Not existing arc ({a} {b})")
+                }
+            }
+            assert_eq!(count, 1);
+        }
+
+
     }
 
     #[test]

@@ -1,4 +1,3 @@
-
 macro_rules! enum_mut {
     ($list:expr) => {
         $list.iter_mut().enumerate()

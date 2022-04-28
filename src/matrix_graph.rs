@@ -76,6 +76,31 @@ where
         self.adj_mat[(src, dst)] = true;
         self.weight_mat[(src, dst)] = weight;
     }
+
+    pub fn node_iterator<'a>(&'a self) -> impl Iterator<Item = (usize, N)> + 'a {
+        self.nodes.iter().copied().enumerate()
+    }
+
+    pub fn arc_iterator<'a>(&'a self) -> impl Iterator<Item = (usize, usize, N)> + 'a {
+        self.adj_mat
+            .indexed_iter()
+            .zip(self.weight_mat.iter())
+            .filter_map(|(((i, j), a), w)| if *a { Some((i, j, *w)) } else { None })
+    }
+
+    pub fn successor_iterator<'a>(
+        &'a self,
+        node: usize,
+    ) -> impl Iterator<Item = (usize, usize, N)> + 'a {
+        let nc = self.nodes.len();
+        (0..nc).filter_map(move |j| {
+            if self.adj_mat[(node, j)] {
+                Some((node, j, self.weight_mat[(node, j)]))
+            } else {
+                None
+            }
+        })
+    }
 }
 
 #[cfg(test)]
@@ -91,15 +116,7 @@ mod test {
         graph.add_new_arc(2, 3, 3.0);
         graph.add_new_arc(3, 0, 4.0);
 
-        for i in 0..4 {
-            let mut local_count = 0;
-            for j in 0..4 {
-                if graph.adj_mat[(i, j)] {
-                    local_count += 1;
-                }
-            }
-            assert_eq!(local_count, 1);
-        }
+
 
         assert_eq!(graph.weight_mat[(0, 1)], 1.0);
         assert_eq!(graph.weight_mat[(1, 2)], 2.0);
@@ -121,8 +138,8 @@ mod test {
 
         graph.update_all_nodes_weight(|i, _| 1.5 * (i as f64));
 
-        for (i, n) in graph.nodes.iter().enumerate() {
-            assert_eq!(*n, 1.5 * (i as f64));
+        for (i, n) in graph.node_iterator() {
+            assert_eq!(n, 1.5 * (i as f64));
         }
     }
 
@@ -135,6 +152,17 @@ mod test {
         graph.add_new_arc(3, 0, 4.0);
 
         graph.update_all_arcs_weight(|_, _, w| 2.0 * w);
+
+
+        for (i, j, w) in graph.arc_iterator() {
+            match (i, j) {
+                (0, 1) | (1, 0) => assert_eq!(2.0, w),
+                (1, 2) | (2, 1) => assert_eq!(4.0, w),
+                (2, 3) | (3, 2) => assert_eq!(6.0, w),
+                (3, 0) | (0, 3) => assert_eq!(8.0, w),
+                (a, b) => panic!("Not existing arc ({a} {b}) with weight {w}")
+            } 
+        }
 
         assert_eq!(graph.weight_mat[(0, 1)], 2.0);
         assert_eq!(graph.weight_mat[(1, 2)], 4.0);
