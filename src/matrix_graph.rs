@@ -1,7 +1,7 @@
 use super::math_graph;
 use super::update_nodes;
 use super::visitor;
-use super::{Graph, GraphType, GetGraphType};
+use super::{GetGraphType, Graph, GraphType};
 use ndarray::{Array2, Zip};
 use num_traits;
 use serde::{Deserialize, Serialize};
@@ -23,7 +23,6 @@ impl<N> MatrixGraph<N>
 where
     N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
-
     pub fn new_direct(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Direct)
     }
@@ -31,8 +30,6 @@ where
     pub fn new_undirect(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Undirect)
     }
-
-    
 
     fn make_arc(&mut self, src: usize, dst: usize, weight: N) {
         if let Some(adj) = self.adj_mat.get_mut((src, dst)) {
@@ -72,7 +69,7 @@ where
     }
 }
 
-impl<N> GetGraphType for MatrixGraph<N> 
+impl<N> GetGraphType for MatrixGraph<N>
 where
     N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
@@ -81,7 +78,7 @@ where
     }
 }
 
-impl<N> GetGraphType for &MatrixGraph<N> 
+impl<N> GetGraphType for &MatrixGraph<N>
 where
     N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
@@ -94,7 +91,6 @@ impl<N> Graph<N> for MatrixGraph<N>
 where
     N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
-
     fn new(node_count: usize, gtype: GraphType) -> Self {
         let nodes = vec![Default::default(); node_count];
         let mat_size = (node_count, node_count);
@@ -108,11 +104,11 @@ where
             weight_mat,
         }
     }
-     fn add_new_default_arc(&mut self, src: usize, dst: usize) {
+    fn add_new_default_arc(&mut self, src: usize, dst: usize) {
         self.add_new_arc(src, dst, Default::default());
     }
 
-     fn add_new_arc(&mut self, src: usize, dst: usize, weight: N) {
+    fn add_new_arc(&mut self, src: usize, dst: usize, weight: N) {
         match self.gtype {
             GraphType::Direct => {
                 self.make_arc(src, dst, weight);
@@ -124,7 +120,7 @@ where
         }
     }
 
-     fn update_all_arcs_weight<F>(&mut self, f: F)
+    fn update_all_arcs_weight<F>(&mut self, f: F)
     where
         F: Fn(usize, usize, N) -> N,
     {
@@ -137,7 +133,7 @@ where
             });
     }
 
-     fn update_all_nodes_weight<F>(&mut self, f: F)
+    fn update_all_nodes_weight<F>(&mut self, f: F)
     where
         F: Fn(usize, N) -> N,
     {
@@ -222,7 +218,7 @@ where
 {
     fn into(self) -> math_graph::MathGraph<N> {
         let arcs = math_graph::Arcs::new_weighted(self.arc_iterator());
-        let nodes = math_graph::Nodes::new_extended(self.nodes);
+        let nodes = math_graph::Nodes::new(self.nodes);
         math_graph::MathGraph::new(nodes, arcs, self.gtype)
     }
 }

@@ -1,7 +1,7 @@
 use super::empty_list_of_lists;
+use super::graph::Graph;
 use super::math_graph;
 use super::visitor;
-use super::graph::Graph;
 use super::GraphType;
 use serde::{Deserialize, Serialize};
 
@@ -28,7 +28,6 @@ where
     pub fn new_undirect(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Undirect)
     }
-
 
     fn make_arc(&mut self, src: usize, dst: usize, weight: N) {
         let arc = AdjArc::new(weight, dst);
@@ -72,11 +71,11 @@ where
         }
     }
 
-     fn add_new_default_arc(&mut self, src: usize, dst: usize) {
+    fn add_new_default_arc(&mut self, src: usize, dst: usize) {
         self.add_new_arc(src, dst, Default::default());
     }
 
-     fn add_new_arc(&mut self, src: usize, dst: usize, weight: N) {
+    fn add_new_arc(&mut self, src: usize, dst: usize, weight: N) {
         match self.gtype {
             GraphType::Direct => {
                 self.make_arc(src, dst, weight);
@@ -88,7 +87,7 @@ where
         }
     }
 
-     fn update_all_arcs_weight<F>(&mut self, f: F)
+    fn update_all_arcs_weight<F>(&mut self, f: F)
     where
         F: Fn(usize, usize, N) -> N,
     {
@@ -99,7 +98,7 @@ where
         }
     }
 
-     fn update_all_nodes_weight<F>(&mut self, f: F)
+    fn update_all_nodes_weight<F>(&mut self, f: F)
     where
         F: Fn(usize, N) -> N,
     {
@@ -107,7 +106,6 @@ where
             *n = f(i, *n);
         }
     }
-
 }
 
 impl<N> super::update_nodes::UpdateNodes<N> for AdjList<N>
@@ -204,7 +202,7 @@ where
 {
     fn into(self) -> math_graph::MathGraph<N> {
         let arcs = math_graph::Arcs::new_weighted(self.arc_iterator());
-        let nodes = math_graph::Nodes::new_extended(self.nodes);
+        let nodes = math_graph::Nodes::new(self.nodes);
         math_graph::MathGraph::new(nodes, arcs, self.gtype)
     }
 }

@@ -1,6 +1,6 @@
-use super::update_nodes;
 use super::graph;
-use super::{GraphType, GetGraphType};
+use super::update_nodes;
+use super::{GetGraphType, GraphType};
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize)]
@@ -47,11 +47,21 @@ impl<N> Nodes<N>
 where
     N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
-    pub fn new_extended(vect: Vec<N>) -> Self {
+    pub fn new(vec: Vec<N>) -> Self {
+        let total = vec.len();
+        let zeros = count_zeros(vec.iter());
+        if 2 * zeros > (total + 1) {
+            Self::new_compact(vec.into_iter().enumerate(), total)
+        } else {
+            Self::new_extended(vec)
+        }
+    }
+
+    fn new_extended(vect: Vec<N>) -> Self {
         Self::Extended(vect)
     }
 
-    pub fn new_compact<Ni>(ni: Ni, count: usize) -> Self
+    fn new_compact<Ni>(ni: Ni, count: usize) -> Self
     where
         Ni: Iterator<Item = (usize, N)>,
     {
@@ -66,6 +76,14 @@ where
             Self::Extended(nodes) => nodes.len(),
         }
     }
+}
+
+fn count_zeros<'a, I, N: 'a>(iter: I) -> usize
+where
+    I: Iterator<Item = &'a N>,
+    N: num_traits::Num,
+{
+    iter.filter(|n| n.is_zero()).count()
 }
 
 #[derive(Deserialize, Serialize)]
@@ -131,8 +149,9 @@ where
 }
 
 pub fn apply_arcs<G, N>(g: &mut G, arcs: Arcs<N>)
-where G: graph::Graph<N> + GetGraphType, 
-N: num_traits::Num + Default + Clone + Copy + Serialize,
+where
+    G: graph::Graph<N> + GetGraphType,
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
     match arcs {
         Arcs::Simple(simple) => simple.into_iter().for_each(|(i, j)| {
@@ -158,5 +177,40 @@ where
         GraphType::Direct => f(i, j, t),
         GraphType::Undirect if i <= j => f(i, j, t),
         _ => {}
+    }
+}
+
+#[cfg(test)]
+mod test {
+
+    use super::*;
+
+    #[test]
+    fn test_nodes_constructor() {
+        let zero_nodes = vec![0; 10];
+        let nodes = Nodes::new(zero_nodes);
+        assert!(matches!(nodes, Nodes::Compact(c) if c.count == 10 && c.weights == vec![]));
+
+        let ones = vec![1; 10];
+        let nodes = Nodes::new(ones);
+        assert!(matches!(nodes, Nodes::Extended(e) if e == vec![1; 10]));
+
+        let mixed = vec![0, 1, 0, 1, 0, 1, 0, 1, 0, 0];
+        let nodes = Nodes::new(mixed);
+        assert!(
+            matches!(nodes, Nodes::Compact(c) if c.count == 10 && c.weights == vec![(1, 1), (3, 1), (5, 1), (7, 1)])
+        );
+    }
+
+    #[test]
+    fn test_count_zeros() {
+        let zeros = vec![0; 10];
+        assert_eq!(count_zeros(zeros.iter()), 10);
+
+        let ones = vec![1; 10];
+        assert_eq!(count_zeros(ones.iter()), 0);
+
+        let mixed = vec![0, 1, 0, 1, 0];
+        assert_eq!(count_zeros(mixed.iter()), 3);
     }
 }

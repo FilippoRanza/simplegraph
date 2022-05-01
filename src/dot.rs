@@ -86,8 +86,8 @@ fn select<G: GetGraphType, T>(g: G, direct: T, undirect: T) -> T {
 mod test {
 
     use super::*;
-    use crate::Graph;
     use crate::adjacency_list_graph;
+    use crate::Graph;
 
     #[test]
     fn test_dot_build_direct_graph() {
