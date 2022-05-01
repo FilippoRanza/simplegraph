@@ -212,14 +212,14 @@ where
     }
 }
 
-impl<N> Into<math_graph::MathGraph<N>> for MatrixGraph<N>
+impl<N> From<MatrixGraph<N>> for  math_graph::MathGraph<N>
 where
     N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
-    fn into(self) -> math_graph::MathGraph<N> {
-        let arcs = math_graph::Arcs::new_weighted(self.arc_iterator());
-        let nodes = math_graph::Nodes::new(self.nodes);
-        math_graph::MathGraph::new(nodes, arcs, self.gtype)
+    fn from(mat: MatrixGraph<N>) -> math_graph::MathGraph<N> {
+        let arcs = math_graph::Arcs::new_weighted(mat.arc_iterator());
+        let nodes = math_graph::Nodes::new(mat.nodes);
+        Self::new(nodes, arcs, mat.gtype)
     }
 }
 

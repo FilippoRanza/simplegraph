@@ -196,14 +196,14 @@ where
     }
 }
 
-impl<N> Into<math_graph::MathGraph<N>> for AdjList<N>
+impl<N> From<AdjList<N>> for math_graph::MathGraph<N>
 where
     N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
-    fn into(self) -> math_graph::MathGraph<N> {
-        let arcs = math_graph::Arcs::new_weighted(self.arc_iterator());
-        let nodes = math_graph::Nodes::new(self.nodes);
-        math_graph::MathGraph::new(nodes, arcs, self.gtype)
+    fn from(adj: AdjList<N>) -> Self {
+        let arcs = math_graph::Arcs::new_weighted(adj.arc_iterator());
+        let nodes = math_graph::Nodes::new(adj.nodes);
+        Self::new(nodes, arcs, adj.gtype)
     }
 }
 
