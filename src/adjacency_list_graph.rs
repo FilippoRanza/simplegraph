@@ -1,8 +1,16 @@
 use super::empty_list_of_lists;
+use super::math_graph;
 use super::visitor;
+use super::graph::Graph;
 use super::GraphType;
+use serde::{Deserialize, Serialize};
 
-pub struct AdjList<N> {
+#[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
+#[serde(from = "math_graph::MathGraph<N>", into = "math_graph::MathGraph<N>")]
+pub struct AdjList<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
     arc_count: usize,
     gtype: GraphType,
     nodes: Vec<N>,
@@ -11,7 +19,7 @@ pub struct AdjList<N> {
 
 impl<N> AdjList<N>
 where
-    N: num_traits::Num + Default + Clone + Copy,
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
     pub fn new_direct(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Direct)
@@ -21,52 +29,6 @@ where
         Self::new(node_count, GraphType::Undirect)
     }
 
-    pub fn new(node_count: usize, gtype: GraphType) -> Self {
-        let nodes = vec![Default::default(); node_count];
-        let lists = empty_list_of_lists(node_count);
-        Self {
-            arc_count: 0,
-            gtype,
-            nodes,
-            lists,
-        }
-    }
-
-    pub fn add_new_default_arc(&mut self, src: usize, dst: usize) {
-        self.add_new_arc(src, dst, Default::default());
-    }
-
-    pub fn add_new_arc(&mut self, src: usize, dst: usize, weight: N) {
-        match self.gtype {
-            GraphType::Direct => {
-                self.make_arc(src, dst, weight);
-            }
-            GraphType::Undirect => {
-                self.make_arc(src, dst, weight);
-                self.make_arc(dst, src, weight);
-            }
-        }
-    }
-
-    pub fn update_all_arcs_weight<F>(&mut self, f: F)
-    where
-        F: Fn(usize, usize, N) -> N,
-    {
-        for (i, list) in enum_mut! {self.lists} {
-            for (j, arc) in list.iter_mut().enumerate() {
-                arc.weight = f(i, j, arc.weight);
-            }
-        }
-    }
-
-    pub fn update_all_nodes_weight<F>(&mut self, f: F)
-    where
-        F: Fn(usize, N) -> N,
-    {
-        for (i, n) in enum_mut! {self.nodes} {
-            *n = f(i, *n);
-        }
-    }
 
     fn make_arc(&mut self, src: usize, dst: usize, weight: N) {
         let arc = AdjArc::new(weight, dst);
@@ -95,7 +57,93 @@ where
     }
 }
 
-impl<N> super::GetGraphType for &AdjList<N> {
+impl<N> Graph<N> for AdjList<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn new(node_count: usize, gtype: GraphType) -> Self {
+        let nodes = vec![Default::default(); node_count];
+        let lists = empty_list_of_lists(node_count);
+        Self {
+            arc_count: 0,
+            gtype,
+            nodes,
+            lists,
+        }
+    }
+
+     fn add_new_default_arc(&mut self, src: usize, dst: usize) {
+        self.add_new_arc(src, dst, Default::default());
+    }
+
+     fn add_new_arc(&mut self, src: usize, dst: usize, weight: N) {
+        match self.gtype {
+            GraphType::Direct => {
+                self.make_arc(src, dst, weight);
+            }
+            GraphType::Undirect => {
+                self.make_arc(src, dst, weight);
+                self.make_arc(dst, src, weight);
+            }
+        }
+    }
+
+     fn update_all_arcs_weight<F>(&mut self, f: F)
+    where
+        F: Fn(usize, usize, N) -> N,
+    {
+        for (i, list) in enum_mut! {self.lists} {
+            for (j, arc) in list.iter_mut().enumerate() {
+                arc.weight = f(i, j, arc.weight);
+            }
+        }
+    }
+
+     fn update_all_nodes_weight<F>(&mut self, f: F)
+    where
+        F: Fn(usize, N) -> N,
+    {
+        for (i, n) in enum_mut! {self.nodes} {
+            *n = f(i, *n);
+        }
+    }
+
+}
+
+impl<N> super::update_nodes::UpdateNodes<N> for AdjList<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn update_all_nodes_weight_iter<I>(&mut self, iter: I)
+    where
+        I: Iterator<Item = N>,
+    {
+        self.nodes.iter_mut().zip(iter).for_each(|(n, i)| *n = i)
+    }
+
+    fn update_indexed_nodes_weight<I>(&mut self, iter: I)
+    where
+        I: Iterator<Item = (usize, N)>,
+    {
+        for (i, w) in iter {
+            self.nodes[i] = w;
+        }
+    }
+}
+
+impl<N> super::GetGraphType for AdjList<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn graph_type(&self) -> GraphType {
+        self.gtype
+    }
+}
+
+impl<N> super::GetGraphType for &AdjList<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
     fn graph_type(&self) -> GraphType {
         self.gtype
     }
@@ -103,7 +151,7 @@ impl<N> super::GetGraphType for &AdjList<N> {
 
 impl<N> visitor::GraphVisitor<N> for &AdjList<N>
 where
-    N: num_traits::Num + Default + Clone + Copy,
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
     fn node_visitor<F: FnMut(usize, N)>(&self, mut f: F) {
         self.node_iterator().for_each(|(i, n)| f(i, n))
@@ -122,6 +170,46 @@ where
     }
 }
 
+impl<N> From<math_graph::MathGraph<N>> for AdjList<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn from(g: math_graph::MathGraph<N>) -> Self {
+        let node_count = g.node_count();
+        let gtype = g.graph_type();
+        let (nodes, arcs) = g.dismount();
+        Self::new(node_count, gtype)
+            .apply_weights(nodes)
+            .apply_arcs(arcs)
+    }
+}
+impl<N> AdjList<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn apply_weights(mut self, nodes: math_graph::Nodes<N>) -> Self {
+        math_graph::apply_nodes(&mut self, nodes);
+        self
+    }
+
+    fn apply_arcs(mut self, arcs: math_graph::Arcs<N>) -> Self {
+        math_graph::apply_arcs(&mut self, arcs);
+        self
+    }
+}
+
+impl<N> Into<math_graph::MathGraph<N>> for AdjList<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn into(self) -> math_graph::MathGraph<N> {
+        let arcs = math_graph::Arcs::new_weighted(self.arc_iterator());
+        let nodes = math_graph::Nodes::new_extended(self.nodes);
+        math_graph::MathGraph::new(nodes, arcs, self.gtype)
+    }
+}
+
+#[derive(Clone, PartialEq, Debug)]
 pub struct AdjArc<N> {
     weight: N,
     next: usize,
@@ -251,6 +339,29 @@ mod test {
             (3, 0, 4.0),
         ];
         assert_eq!(expect, visit_list);
+    }
+
+    #[test]
+    fn test_conversion() {
+        let mut orig_graph = AdjList::new_undirect(4);
+        orig_graph.update_all_nodes_weight(|i, _| i);
+        orig_graph.add_new_arc(0, 1, 1);
+        orig_graph.add_new_arc(1, 2, 2);
+        orig_graph.add_new_arc(2, 3, 3);
+
+        let math_graph: math_graph::MathGraph<usize> = orig_graph.clone().into();
+        let new_graph = AdjList::from(math_graph);
+        assert_eq!(orig_graph, new_graph);
+
+        let mut orig_graph = AdjList::new_direct(4);
+        orig_graph.update_all_nodes_weight(|i, _| i);
+        orig_graph.add_new_arc(0, 1, 1);
+        orig_graph.add_new_arc(1, 2, 2);
+        orig_graph.add_new_arc(2, 3, 3);
+
+        let math_graph: math_graph::MathGraph<usize> = orig_graph.clone().into();
+        let new_graph = AdjList::from(math_graph);
+        assert_eq!(orig_graph, new_graph);
     }
 
     fn make_graph() -> AdjList<f64> {

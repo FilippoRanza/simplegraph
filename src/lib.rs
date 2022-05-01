@@ -6,10 +6,20 @@ macro_rules! enum_mut {
 
 pub mod adjacency_list_graph;
 pub mod dot;
+pub mod math_graph;
 pub mod matrix_graph;
+mod update_nodes;
 pub mod visitor;
+pub mod graph;
 
-#[derive(Clone, Copy)]
+use serde::{Deserialize, Serialize};
+
+pub use adjacency_list_graph::AdjList;
+pub use matrix_graph::MatrixGraph;
+pub use visitor::GraphVisitor;
+pub use graph::Graph;
+
+#[derive(Clone, Copy, Deserialize, Serialize, PartialEq, Debug)]
 pub enum GraphType {
     Direct,
     Undirect,

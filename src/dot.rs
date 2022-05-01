@@ -86,6 +86,7 @@ fn select<G: GetGraphType, T>(g: G, direct: T, undirect: T) -> T {
 mod test {
 
     use super::*;
+    use crate::Graph;
     use crate::adjacency_list_graph;
 
     #[test]

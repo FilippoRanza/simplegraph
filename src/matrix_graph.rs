@@ -1,9 +1,17 @@
+use super::math_graph;
+use super::update_nodes;
 use super::visitor;
-use super::GraphType;
+use super::{Graph, GraphType, GetGraphType};
 use ndarray::{Array2, Zip};
 use num_traits;
+use serde::{Deserialize, Serialize};
 
-pub struct MatrixGraph<N> {
+#[derive(Clone, Serialize, Deserialize)]
+#[serde(from = "math_graph::MathGraph<N>", into = "math_graph::MathGraph<N>")]
+pub struct MatrixGraph<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
     arc_count: usize,
     gtype: GraphType,
     nodes: Vec<N>,
@@ -13,21 +21,8 @@ pub struct MatrixGraph<N> {
 
 impl<N> MatrixGraph<N>
 where
-    N: num_traits::Num + Default + Clone + Copy,
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
-    pub fn new(node_count: usize, gtype: GraphType) -> Self {
-        let nodes = vec![Default::default(); node_count];
-        let mat_size = (node_count, node_count);
-        let adj_mat = Array2::default(mat_size);
-        let weight_mat = Array2::zeros(mat_size);
-        Self {
-            arc_count: 0,
-            nodes,
-            gtype,
-            adj_mat,
-            weight_mat,
-        }
-    }
 
     pub fn new_direct(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Direct)
@@ -37,43 +32,7 @@ where
         Self::new(node_count, GraphType::Undirect)
     }
 
-    pub fn add_new_default_arc(&mut self, src: usize, dst: usize) {
-        self.add_new_arc(src, dst, Default::default());
-    }
-
-    pub fn add_new_arc(&mut self, src: usize, dst: usize, weight: N) {
-        match self.gtype {
-            GraphType::Direct => {
-                self.make_arc(src, dst, weight);
-            }
-            GraphType::Undirect => {
-                self.make_arc(src, dst, weight);
-                self.make_arc(dst, src, weight);
-            }
-        }
-    }
-
-    pub fn update_all_arcs_weight<F>(&mut self, f: F)
-    where
-        F: Fn(usize, usize, N) -> N,
-    {
-        Zip::indexed(&mut self.weight_mat)
-            .and(&self.adj_mat)
-            .for_each(|(i, j), w, a| {
-                if *a {
-                    *w = f(i, j, *w)
-                }
-            });
-    }
-
-    pub fn update_all_nodes_weight<F>(&mut self, f: F)
-    where
-        F: Fn(usize, N) -> N,
-    {
-        for (i, n) in enum_mut! {self.nodes} {
-            *n = f(i, *n);
-        }
-    }
+    
 
     fn make_arc(&mut self, src: usize, dst: usize, weight: N) {
         if let Some(adj) = self.adj_mat.get_mut((src, dst)) {
@@ -113,15 +72,84 @@ where
     }
 }
 
-impl<N> super::GetGraphType for &MatrixGraph<N> {
+impl<N> GetGraphType for MatrixGraph<N> 
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
     fn graph_type(&self) -> GraphType {
         self.gtype
     }
 }
 
+impl<N> GetGraphType for &MatrixGraph<N> 
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn graph_type(&self) -> GraphType {
+        self.gtype
+    }
+}
+
+impl<N> Graph<N> for MatrixGraph<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+
+    fn new(node_count: usize, gtype: GraphType) -> Self {
+        let nodes = vec![Default::default(); node_count];
+        let mat_size = (node_count, node_count);
+        let adj_mat = Array2::default(mat_size);
+        let weight_mat = Array2::zeros(mat_size);
+        Self {
+            arc_count: 0,
+            nodes,
+            gtype,
+            adj_mat,
+            weight_mat,
+        }
+    }
+     fn add_new_default_arc(&mut self, src: usize, dst: usize) {
+        self.add_new_arc(src, dst, Default::default());
+    }
+
+     fn add_new_arc(&mut self, src: usize, dst: usize, weight: N) {
+        match self.gtype {
+            GraphType::Direct => {
+                self.make_arc(src, dst, weight);
+            }
+            GraphType::Undirect => {
+                self.make_arc(src, dst, weight);
+                self.make_arc(dst, src, weight);
+            }
+        }
+    }
+
+     fn update_all_arcs_weight<F>(&mut self, f: F)
+    where
+        F: Fn(usize, usize, N) -> N,
+    {
+        Zip::indexed(&mut self.weight_mat)
+            .and(&self.adj_mat)
+            .for_each(|(i, j), w, a| {
+                if *a {
+                    *w = f(i, j, *w)
+                }
+            });
+    }
+
+     fn update_all_nodes_weight<F>(&mut self, f: F)
+    where
+        F: Fn(usize, N) -> N,
+    {
+        for (i, n) in enum_mut! {self.nodes} {
+            *n = f(i, *n);
+        }
+    }
+}
+
 impl<N> visitor::GraphVisitor<N> for &MatrixGraph<N>
 where
-    N: num_traits::Num + Default + Clone + Copy,
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
     fn node_visitor<F: FnMut(usize, N)>(&self, mut f: F) {
         self.node_iterator().for_each(|(i, j)| f(i, j))
@@ -136,6 +164,66 @@ where
 
     fn arc_count(&self) -> usize {
         self.arc_count
+    }
+}
+
+impl<N> From<math_graph::MathGraph<N>> for MatrixGraph<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn from(g: math_graph::MathGraph<N>) -> Self {
+        let gtype = g.graph_type();
+        let node_count = g.node_count();
+        let (nodes, arcs) = g.dismount();
+        Self::new(node_count, gtype)
+            .apply_weights(nodes)
+            .apply_arcs(arcs)
+    }
+}
+
+impl<N> MatrixGraph<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn apply_weights(mut self, nodes: math_graph::Nodes<N>) -> Self {
+        math_graph::apply_nodes(&mut self, nodes);
+        self
+    }
+
+    fn apply_arcs(mut self, arcs: math_graph::Arcs<N>) -> Self {
+        math_graph::apply_arcs(&mut self, arcs);
+        self
+    }
+}
+
+impl<N> update_nodes::UpdateNodes<N> for MatrixGraph<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn update_all_nodes_weight_iter<I>(&mut self, iter: I)
+    where
+        I: Iterator<Item = N>,
+    {
+        self.nodes.iter_mut().zip(iter).for_each(|(n, i)| *n = i);
+    }
+    fn update_indexed_nodes_weight<I>(&mut self, iter: I)
+    where
+        I: Iterator<Item = (usize, N)>,
+    {
+        for (i, w) in iter {
+            self.nodes[i] = w;
+        }
+    }
+}
+
+impl<N> Into<math_graph::MathGraph<N>> for MatrixGraph<N>
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn into(self) -> math_graph::MathGraph<N> {
+        let arcs = math_graph::Arcs::new_weighted(self.arc_iterator());
+        let nodes = math_graph::Nodes::new_extended(self.nodes);
+        math_graph::MathGraph::new(nodes, arcs, self.gtype)
     }
 }
 
