@@ -1,9 +1,9 @@
 use super::empty_list_of_lists;
 use super::graph::Graph;
 use super::math_graph;
+use super::path_cost::ArcCost;
 use super::visitor;
 use super::GraphType;
-use super::path_cost::ArcCost;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
@@ -209,7 +209,8 @@ where
 }
 
 impl<N> ArcCost<N> for &AdjList<N>
-where N: num_traits::Num + Default + Clone + Copy + Serialize,
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
     fn cost(&self, src: usize, dst: usize) -> N {
         let src_list = &self.lists[src];
@@ -248,7 +249,7 @@ mod test {
 
     use super::*;
     use crate::visitor::GraphVisitor;
-    
+
     #[test]
     fn test_arc_cost() {
         let graph = make_graph();
@@ -256,8 +257,6 @@ mod test {
         assert_eq!(g_ref.cost(0, 1), 1.0);
         assert_eq!(g_ref.cost(3, 0), 4.0);
     }
-
-
 
     #[test]
     fn test_direct_graph() {

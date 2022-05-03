@@ -1,7 +1,7 @@
 use super::math_graph;
+use super::path_cost::ArcCost;
 use super::update_nodes;
 use super::visitor;
-use super::path_cost::ArcCost;
 use super::{GetGraphType, Graph, GraphType};
 use ndarray::{Array2, Zip};
 use num_traits;
@@ -224,16 +224,13 @@ where
     }
 }
 
-
-impl<N> ArcCost<N> for &MatrixGraph<N> 
-
+impl<N> ArcCost<N> for &MatrixGraph<N>
 where
     N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
     fn cost(&self, src: usize, dst: usize) -> N {
         self.weight_mat[(src, dst)]
     }
-
 }
 
 #[cfg(test)]

@@ -102,8 +102,8 @@ impl<'a> Iterator for SuccessorIterator<'a> {
 mod test {
 
     use super::*;
-    use crate::MatrixGraph;
     use crate::Graph;
+    use crate::MatrixGraph;
 
     #[test]
     fn test_path_cost_iterator() {
@@ -122,8 +122,6 @@ mod test {
         assert_eq!(path_cost_iter.next(), Some((2, 3, 3.0)));
         assert_eq!(path_cost_iter.next(), None);
     }
-
-
 
     #[test]
     fn test_successor_iterator() {
