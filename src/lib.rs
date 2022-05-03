@@ -9,6 +9,7 @@ pub mod dot;
 pub mod graph;
 pub mod math_graph;
 pub mod matrix_graph;
+pub mod path_cost;
 mod update_nodes;
 pub mod visitor;
 

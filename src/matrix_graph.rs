@@ -1,6 +1,7 @@
 use super::math_graph;
 use super::update_nodes;
 use super::visitor;
+use super::path_cost::ArcCost;
 use super::{GetGraphType, Graph, GraphType};
 use ndarray::{Array2, Zip};
 use num_traits;
@@ -212,7 +213,7 @@ where
     }
 }
 
-impl<N> From<MatrixGraph<N>> for  math_graph::MathGraph<N>
+impl<N> From<MatrixGraph<N>> for math_graph::MathGraph<N>
 where
     N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
@@ -223,11 +224,31 @@ where
     }
 }
 
+
+impl<N> ArcCost<N> for &MatrixGraph<N> 
+
+where
+    N: num_traits::Num + Default + Clone + Copy + Serialize,
+{
+    fn cost(&self, src: usize, dst: usize) -> N {
+        self.weight_mat[(src, dst)]
+    }
+
+}
+
 #[cfg(test)]
 mod test {
 
     use super::*;
     use crate::visitor::GraphVisitor;
+
+    #[test]
+    fn test_arc_cost() {
+        let graph = make_graph();
+        let g_ref = &graph;
+        assert_eq!(g_ref.cost(0, 1), 1.0);
+        assert_eq!(g_ref.cost(3, 0), 4.0);
+    }
 
     #[test]
     fn test_direct_graph() {
