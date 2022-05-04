@@ -1,4 +1,7 @@
 # simplegraph
+![Test](https://github.com/FilippoRanza/simplegraph/workflows/Rust/badge.svg) ![crates.io](https://img.shields.io/crates/v/simplegraph.svg)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=round-square)](http://makeapullrequest.com)
+
 **simplegraph** provides a simple graph implementation 
 in Rust. 
 
