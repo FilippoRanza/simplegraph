@@ -1,13 +1,57 @@
+/*!
+ * Compute the cost of all sub path.
+ */
+
 use std::ops::Range;
 use std::slice::Iter;
 
+/**
+ * Implementations of this trait allows a direct
+ * query of an arcs' costs.
+ */
 pub trait ArcCost<N>
 where
     N: num_traits::Num,
 {
+    /**
+     * Return the weight associated to given arc.
+     */
     fn cost(&self, src: usize, dst: usize) -> N;
 }
 
+/**
+ * Implement an iterator over the 
+ * cost (length)  of all the sub-path
+ * of the given path on graph G. 
+ * Note: only the subpath in one direction 
+ * are yielded by the iterator, this behavior is coherent
+ * with direct graphs and it is trivial to adapt the 
+ * result to undirected graphs.
+ * 
+ * ```
+ * use simplegraph::MatrixGraph;
+ * use simplegraph::Graph;
+ * use simplegraph::path_cost::AllSubPathCost;
+ * 
+ * // Create a new Graph 
+ * let mut graph = MatrixGraph::<f64>::new_direct(4);
+ * graph.add_new_arc(0, 1, 1.0);
+ * graph.add_new_arc(1, 2, 2.0);
+ * graph.add_new_arc(2, 3, 3.0);
+ * graph.add_new_arc(3, 0, 4.0);
+ * 
+ * // Iterate through all subpath costs
+ * let mut path_cost_iter = AllSubPathCost::new(&graph, &[0, 1, 2, 3]);
+ * assert_eq!(path_cost_iter.next(), Some((0, 1, 1.0)));
+ * assert_eq!(path_cost_iter.next(), Some((0, 2, 3.0)));
+ * assert_eq!(path_cost_iter.next(), Some((0, 3, 6.0)));
+ * assert_eq!(path_cost_iter.next(), Some((1, 2, 2.0)));
+ * assert_eq!(path_cost_iter.next(), Some((1, 3, 5.0)));
+ * assert_eq!(path_cost_iter.next(), Some((2, 3, 3.0)));
+ * assert_eq!(path_cost_iter.next(), None);
+ * ```
+ * 
+ */
 pub struct AllSubPathCost<'a, G, N>
 where
     G: ArcCost<N>,
@@ -16,7 +60,7 @@ where
     curr: usize,
     weight: N,
     graph: G,
-    nodes: &'a [usize],
+    path: &'a [usize],
     range: Range<usize>,
     succ_iter: SuccessorIterator<'a>,
 }
@@ -26,15 +70,23 @@ where
     G: ArcCost<N>,
     N: num_traits::Num,
 {
-    pub fn new(g: G, nodes: &'a [usize]) -> Self {
+    /**
+     * Initialize an AllSubPathCost for graph *g* with
+     * the given *path*. Each entry in *path* is the index
+     * of a node in *g*, the first entry is considered 
+     * the start node and the last is the destination.
+     * All the other nodes in the path are the visited 
+     * nodes in order.
+     */
+    pub fn new(g: G, path: &'a [usize]) -> Self {
         let curr = 0;
         let weight = N::zero();
-        let range = 1..nodes.len();
-        let succ_iter = SuccessorIterator::new(nodes.iter());
+        let range = 1..path.len();
+        let succ_iter = SuccessorIterator::new(path.iter());
         Self {
             curr,
             graph: g,
-            nodes,
+            path,
             weight,
             range,
             succ_iter,
@@ -51,7 +103,7 @@ where
 
     fn step_next_node(&mut self) -> Option<(usize, usize)> {
         self.curr = self.range.next()?;
-        let sub_nodes = &self.nodes[self.curr..];
+        let sub_nodes = &self.path[self.curr..];
         self.succ_iter = SuccessorIterator::new(sub_nodes.iter());
         self.weight = N::zero();
         self.succ_iter.next()
@@ -63,7 +115,14 @@ where
     G: ArcCost<N>,
     N: num_traits::Num + Copy,
 {
+    /**
+     * In this tuple the first item is the source node, 
+     * second item is destination node and last is the 
+     * associated cost (length).
+     */
     type Item = (usize, usize, N);
+
+
     fn next(&mut self) -> Option<Self::Item> {
         let (src, dst) = self.get_next_arc()?;
         let w = self.graph.cost(src, dst);

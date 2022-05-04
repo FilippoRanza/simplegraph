@@ -1,3 +1,7 @@
+/*!
+ * [Adjacency list graph](https://en.wikipedia.org/wiki/Adjacency_list) implementation.
+ */
+
 use super::empty_list_of_lists;
 use super::graph::Graph;
 use super::math_graph;
@@ -6,6 +10,15 @@ use super::visitor;
 use super::GraphType;
 use serde::{Deserialize, Serialize};
 
+/**
+ * Graph represented as Adjacency list. Directly support
+ * both direct and undirect graphs. This representation
+ * offers a minimal memory foot print - it keeps information
+ * only about existing arcs - at the cost of some inefficiencies
+ * in some opertations.
+ * The memory footprint of an AdJList is always *O*(|N|) + *O*(|A|), where 
+ * |N| is the number of nodes and |A| is the number of arcs in the graph.
+ */
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
 #[serde(from = "math_graph::MathGraph<N>", into = "math_graph::MathGraph<N>")]
 pub struct AdjList<N>
@@ -22,10 +35,20 @@ impl<N> AdjList<N>
 where
     N: num_traits::Num + Default + Clone + Copy + Serialize,
 {
+    /**
+     * Create a new direct graph with the given
+     * number of nodes. The resulting graph will NOT
+     * contain arcs. All nodes' weights are set to ```num_traits::Num::zero()```
+     */
     pub fn new_direct(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Direct)
     }
 
+    /**
+     * Create a new undirect graph with the given
+     * number of nodes. The resulting graph will NOT
+     * contain arcs. All nodes' weights are set to ```num_traits::Num::zero()```
+     */
     pub fn new_undirect(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Undirect)
     }
@@ -36,10 +59,16 @@ where
         self.arc_count += 1;
     }
 
+    /**
+     * Return an iterator over the nodes.
+     */
     pub fn node_iterator(&'_ self) -> impl Iterator<Item = (usize, N)> + '_ {
         self.nodes.iter().copied().enumerate()
     }
 
+    /**
+     * Return an iterator over all the arcs in the graph.
+     */
     pub fn arc_iterator(&'_ self) -> impl Iterator<Item = (usize, usize, N)> + '_ {
         self.lists
             .iter()
@@ -47,6 +76,9 @@ where
             .flat_map(|(i, list)| list.iter().map(move |a| (i, a.next, a.weight)))
     }
 
+    /**
+     * Return an iterator over the arcs exiting the given nodes.
+     */
     pub fn successor_iterator(
         &'_ self,
         node: usize,
@@ -220,7 +252,7 @@ where
 }
 
 #[derive(Clone, PartialEq, Debug)]
-pub struct AdjArc<N> {
+struct AdjArc<N> {
     weight: N,
     next: usize,
 }
@@ -231,16 +263,6 @@ where
 {
     fn new(weight: N, next: usize) -> Self {
         Self { weight, next }
-    }
-
-    #[inline]
-    pub fn weight(&self) -> N {
-        self.weight
-    }
-
-    #[inline]
-    pub fn next(&self) -> usize {
-        self.next
     }
 }
 
