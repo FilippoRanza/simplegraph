@@ -12,12 +12,12 @@ use num_traits;
 use serde::{Deserialize, Serialize};
 
 /**
- * Graph represented as Adjacency Matrix. Directly support both direct 
- * and undirect graphs. This representation is efficient (*fast*) in almost 
+ * Graph represented as Adjacency Matrix. Directly support both direct
+ * and undirect graphs. This representation is efficient (*fast*) in almost
  * any operation at the cost of a, in certain case, inefficient memory usage.
- *  The memory footprint of a MatrixGraph is always *O*(|N|²) where 
+ *  The memory footprint of a MatrixGraph is always *O*(|N|²) where
  * |N| is the number of nodes and is the number of arcs in the graph.
- * 
+ *
  */
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(from = "math_graph::MathGraph<N>", into = "math_graph::MathGraph<N>")]
@@ -39,7 +39,7 @@ where
     /**
      * Create a new direct graph with the given
      * number of nodes. The resulting graph will NOT
-     * contain arcs. All nodes' weights are set to ```num_traits::Num::zero()```
+     * contain arcs. All nodes' weights are set to [num_traits::Num::zero()](https://docs.rs/num/latest/num/traits/trait.Zero.html)
      */
     pub fn new_direct(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Direct)
@@ -48,7 +48,7 @@ where
     /**
      * Create a new undirect graph with the given
      * number of nodes. The resulting graph will NOT
-     * contain arcs. All nodes' weights are set to ```num_traits::Num::zero()```
+     * contain arcs. All nodes' weights are set to [num_traits::Num::zero()](https://docs.rs/num/latest/num/traits/trait.Zero.html)
      */
     pub fn new_undirect(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Undirect)
@@ -82,7 +82,7 @@ where
             .zip(self.weight_mat.iter())
             .filter_map(|(((i, j), a), w)| if *a { Some((i, j, *w)) } else { None })
     }
-    
+
     /**
      * Return an iterator over the arcs exiting the given nodes.
      */

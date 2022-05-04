@@ -1,5 +1,5 @@
 /*!
- * Pseudo-math representation of a graph. Used only as a command middleman 
+ * Pseudo-math representation of a graph. Used only as a command middleman
  * for [Serde](https://serde.rs).
  */
 use super::graph;

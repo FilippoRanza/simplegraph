@@ -1,5 +1,5 @@
 /*!
- * Convert [visitable](visitor::GraphVisitor) graph into 
+ * Convert [visitable](visitor::GraphVisitor) graph into
  * [dot](https://graphviz.org/) source code.
  */
 
@@ -8,7 +8,7 @@ use super::{GetGraphType, GraphType};
 use std::fmt;
 
 /**
- * Convert the given [GraphVisitor](visitor::GraphVisitor) 
+ * Convert the given [GraphVisitor](visitor::GraphVisitor)
  * into [dot](https://graphviz.org/) source code.
  */
 pub fn to_dot_source<G, N>(g: G) -> String

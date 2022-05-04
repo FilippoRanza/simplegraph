@@ -16,7 +16,7 @@ use serde::{Deserialize, Serialize};
  * offers a minimal memory foot print - it keeps information
  * only about existing arcs - at the cost of some inefficiencies
  * in some opertations.
- * The memory footprint of an AdJList is always *O*(|N|) + *O*(|A|), where 
+ * The memory footprint of an AdJList is always *O*(|N|) + *O*(|A|), where
  * |N| is the number of nodes and |A| is the number of arcs in the graph.
  */
 #[derive(Clone, Serialize, Deserialize, PartialEq, Debug)]
@@ -38,7 +38,7 @@ where
     /**
      * Create a new direct graph with the given
      * number of nodes. The resulting graph will NOT
-     * contain arcs. All nodes' weights are set to ```num_traits::Num::zero()```
+     * contain arcs. All nodes' weights are set to [num_traits::Num::zero()](https://docs.rs/num/latest/num/traits/trait.Zero.html)
      */
     pub fn new_direct(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Direct)
@@ -47,7 +47,7 @@ where
     /**
      * Create a new undirect graph with the given
      * number of nodes. The resulting graph will NOT
-     * contain arcs. All nodes' weights are set to ```num_traits::Num::zero()```
+     * contain arcs. All nodes' weights are set to [num_traits::Num::zero()](https://docs.rs/num/latest/num/traits/trait.Zero.html)
      */
     pub fn new_undirect(node_count: usize) -> Self {
         Self::new(node_count, GraphType::Undirect)

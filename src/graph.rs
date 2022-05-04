@@ -17,7 +17,7 @@ pub trait Graph<N> {
 
     /**
      * Create a new arc from ```src``` to ```dst``` (and from ```dst``` to ```src``` if the graph is undirected)
-     * and associtate with this new arc the cost ```num_traits::Num::zero()```
+     * and associtate with this new arc the cost [num_traits::Num::zero()](https://docs.rs/num/latest/num/traits/trait.Zero.html)
      */
     fn add_new_default_arc(&mut self, src: usize, dst: usize);
 
