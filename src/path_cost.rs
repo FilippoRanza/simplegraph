@@ -57,7 +57,8 @@ where
     G: ArcCost<N>,
     N: num_traits::Num,
 {
-    curr: usize,
+    curr_idx: usize,
+    curr_node: usize,
     weight: N,
     graph: G,
     path: &'a [usize],
@@ -79,12 +80,14 @@ where
      * nodes in order.
      */
     pub fn new(g: G, path: &'a [usize]) -> Self {
-        let curr = 0;
+        let curr_idx = 0;
+        let curr_node = *path.first().unwrap_or(&0);
         let weight = N::zero();
         let range = 1..path.len();
         let succ_iter = SuccessorIterator::new(path.iter());
         Self {
-            curr,
+            curr_idx,
+            curr_node,
             graph: g,
             path,
             weight,
@@ -102,8 +105,9 @@ where
     }
 
     fn step_next_node(&mut self) -> Option<(usize, usize)> {
-        self.curr = self.range.next()?;
-        let sub_nodes = &self.path[self.curr..];
+        self.curr_idx = self.range.next()?;
+        self.curr_node = self.path[self.curr_idx];
+        let sub_nodes = &self.path[self.curr_idx..];
         self.succ_iter = SuccessorIterator::new(sub_nodes.iter());
         self.weight = N::zero();
         self.succ_iter.next()
@@ -126,7 +130,7 @@ where
         let (src, dst) = self.get_next_arc()?;
         let w = self.graph.cost(src, dst);
         self.weight = self.weight + w;
-        Some((self.curr, dst, self.weight))
+        Some((self.curr_node, dst, self.weight))
     }
 }
 
@@ -180,9 +184,33 @@ mod test {
         assert_eq!(path_cost_iter.next(), Some((2, 3, 3.0)));
         assert_eq!(path_cost_iter.next(), None);
     }
+    #[test]
+    fn test_path_cost_iterator_2() {
+        let mut graph = MatrixGraph::<f64>::new_direct(6);
+        graph.add_new_arc(0, 1, 1.0);
+        graph.add_new_arc(1, 2, 1.0);
+        graph.add_new_arc(2, 3, 1.0);
+        graph.add_new_arc(3, 0, 1.0);
+        graph.add_new_arc(5, 2, 1.0);
+        graph.add_new_arc(2, 4, 1.0);
+        graph.add_new_arc(4, 3, 1.0);
+
+
+
+
+        let mut path_cost_iter = AllSubPathCost::new(&graph, &[5, 2, 4, 3]);
+        assert_eq!(path_cost_iter.next(), Some((5, 2, 1.0)));
+        assert_eq!(path_cost_iter.next(), Some((5, 4, 2.0)));
+        assert_eq!(path_cost_iter.next(), Some((5, 3, 3.0)));
+        assert_eq!(path_cost_iter.next(), Some((2, 4, 1.0)));
+        assert_eq!(path_cost_iter.next(), Some((2, 3, 2.0)));
+        assert_eq!(path_cost_iter.next(), Some((4, 3, 1.0)));
+
+        assert_eq!(path_cost_iter.next(), None);
+    }
 
     #[test]
-    fn test_successor_iterator() {
+    fn test_successor_iterator_1() {
         let elements = [1, 2, 3, 4, 5, 6];
         let mut iter = SuccessorIterator::new(elements.iter());
         assert_eq!(iter.next(), Some((1, 2)));
@@ -190,6 +218,17 @@ mod test {
         assert_eq!(iter.next(), Some((3, 4)));
         assert_eq!(iter.next(), Some((4, 5)));
         assert_eq!(iter.next(), Some((5, 6)));
+        assert_eq!(iter.next(), None);
+    }
+
+    #[test]
+    fn test_successor_iterator_2() {
+        let elements = [6, 5, 2, 7, 8];
+        let mut iter = SuccessorIterator::new(elements.iter());
+        assert_eq!(iter.next(), Some((6, 5)));
+        assert_eq!(iter.next(), Some((5, 2)));
+        assert_eq!(iter.next(), Some((2, 7)));
+        assert_eq!(iter.next(), Some((7, 8)));
         assert_eq!(iter.next(), None);
     }
 }
