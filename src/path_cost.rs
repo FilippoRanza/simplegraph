@@ -41,13 +41,13 @@ where
  * graph.add_new_arc(3, 0, 4.0);
  *
  * // Iterate through all subpath costs
- * let mut path_cost_iter = AllSubPathCost::new(&graph, &[0, 1, 2, 3]);
- * assert_eq!(path_cost_iter.next(), Some((0, 1, 1.0)));
- * assert_eq!(path_cost_iter.next(), Some((0, 2, 3.0)));
- * assert_eq!(path_cost_iter.next(), Some((0, 3, 6.0)));
+ * let mut path_cost_iter = AllSubPathCost::new(&graph, &[1, 2, 3, 0]);
  * assert_eq!(path_cost_iter.next(), Some((1, 2, 2.0)));
  * assert_eq!(path_cost_iter.next(), Some((1, 3, 5.0)));
+ * assert_eq!(path_cost_iter.next(), Some((1, 0, 9.0)));
  * assert_eq!(path_cost_iter.next(), Some((2, 3, 3.0)));
+ * assert_eq!(path_cost_iter.next(), Some((2, 0, 7.0)));
+ * assert_eq!(path_cost_iter.next(), Some((3, 0, 4.0)));
  * assert_eq!(path_cost_iter.next(), None);
  * ```
  *
@@ -81,7 +81,7 @@ where
      */
     pub fn new(g: G, path: &'a [usize]) -> Self {
         let curr_idx = 0;
-        let curr_node = *path.first().unwrap_or(&0);
+        let curr_node = path.first().map_or(0, |v| *v);
         let weight = N::zero();
         let range = 1..path.len();
         let succ_iter = SuccessorIterator::new(path.iter());
