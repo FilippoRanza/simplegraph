@@ -268,6 +268,7 @@ where
 mod test {
 
     use super::*;
+    use super::super::tests;
     use crate::visitor::GraphVisitor;
 
     #[test]
@@ -363,6 +364,29 @@ mod test {
             (3, 2, 3.0),
         ];
         assert_eq!(expect, visit_list);
+    }
+
+    #[test]
+    fn test_update_all_arcs_weight() {
+        let mut graph: MatrixGraph<f64> = MatrixGraph::new_direct(4);
+        graph.add_new_default_arc(0, 1);
+        graph.add_new_default_arc(1, 2);
+        graph.add_new_default_arc(2, 3);
+        graph.add_new_default_arc(3, 0);
+
+        let points = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)];
+
+        graph.update_all_arcs_weight(|i, j, _| tests::euclid_distance(&points[i], &points[j]));
+
+        for (i, j, w) in graph.arc_iterator() {
+            match (i, j) {
+                (0, 1) => tests::approx_equal(1.0, w, 1e-8),
+                (1, 2) => tests::approx_equal(f64::sqrt(2.0), w, 1e-8),
+                (2, 3) => tests::approx_equal(1.0, w, 1e-8),
+                (3, 0) => tests::approx_equal(f64::sqrt(2.0), w, 1e-8),
+                (a, b) => panic!("Not existing arc ({a} {b})"),
+            }
+        }
     }
 
     fn make_graph() -> MatrixGraph<f64> {

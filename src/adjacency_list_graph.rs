@@ -125,8 +125,8 @@ where
         F: Fn(usize, usize, N) -> N,
     {
         for (i, list) in enum_mut! {self.lists} {
-            for (j, arc) in list.iter_mut().enumerate() {
-                arc.weight = f(i, j, arc.weight);
+            for arc in list.iter_mut() {
+                arc.weight = f(i, arc.next, arc.weight);
             }
         }
     }
@@ -269,6 +269,7 @@ where
 #[cfg(test)]
 mod test {
 
+    use super::super::tests;
     use super::*;
     use crate::visitor::GraphVisitor;
 
@@ -345,6 +346,31 @@ mod test {
             assert_eq!(count, 1);
         }
     }
+
+    #[test]
+    fn test_update_all_arcs_weight() {
+        let mut graph: AdjList<f64> = AdjList::new_direct(4);
+        graph.add_new_default_arc(0, 1);
+        graph.add_new_default_arc(1, 2);
+        graph.add_new_default_arc(2, 3);
+        graph.add_new_default_arc(3, 0);
+
+        let points = [(0.0, 0.0), (0.0, 1.0), (1.0, 0.0), (1.0, 1.0)];
+
+        graph.update_all_arcs_weight(|i, j, _| tests::euclid_distance(&points[i], &points[j]));
+
+        for (i, j, w) in graph.arc_iterator() {
+            match (i, j) {
+                (0, 1) => tests::approx_equal(1.0, w, 1e-8),
+                (1, 2) => tests::approx_equal(f64::sqrt(2.0), w, 1e-8),
+                (2, 3) => tests::approx_equal(1.0, w, 1e-8),
+                (3, 0) => tests::approx_equal(f64::sqrt(2.0), w, 1e-8),
+                (a, b) => panic!("Not existing arc ({a} {b})"),
+            }
+        }
+    }
+
+
 
     #[test]
     fn test_undirect_graph() {

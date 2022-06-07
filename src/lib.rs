@@ -40,9 +40,25 @@ pub trait GetGraphType {
     fn graph_type(&self) -> GraphType;
 }
 
-#[cfg(test)]
-mod tests {}
-
 fn empty_list_of_lists<T>(count: usize) -> Vec<Vec<T>> {
     (0..count).map(|_| vec![]).collect()
 }
+
+
+#[cfg(test)]
+mod tests {
+    pub fn euclid_distance(p1: &(f64, f64), p2: &(f64, f64)) -> f64 {
+        let (x1, y1) = p1;
+        let (x2, y2) = p2;
+        let dx = x1 - x2;
+        let dy = y1 - y2;
+        ((dx * dx) + (dy * dy)).sqrt()
+    }
+
+    pub fn approx_equal(a: f64, b: f64, tol: f64) {
+        let diff = (a - b).abs();
+        assert!(diff <= tol, "a: {a}, b: {b}, tol: {tol}");
+    }
+}
+
+
